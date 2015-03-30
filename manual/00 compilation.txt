@@ -3,9 +3,8 @@
 #http://wiki.qemu.org/Features/MicroCheckpointing#Usage
 
 sudo apt-get install git build-essential libtool libpixman-1-dev libfdt-dev libnl-cli-3-dev libgtk2.0-dev
-git clone http://github.com/hinesmr/qemu.git
+git clone -b mc https://github.com/glelouet/qemu.git
 cd qemu
-git checkout mc
 
 ./configure --enable-mc --target-list=x86_64-softmmu --enable-system --enable-gtk --enable-kvm && make -j 8 && sudo make -j 8 install
 
