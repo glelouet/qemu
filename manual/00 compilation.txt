@@ -1,0 +1,22 @@
+#test sous linux Ubuntu 14.10 , janvier 2015
+
+#http://wiki.qemu.org/Features/MicroCheckpointing#Usage
+
+sudo apt-get install git build-essential libtool libpixman-1-dev libfdt-dev libnl-cli-3-dev libgtk2.0-dev
+git clone http://github.com/hinesmr/qemu.git
+cd qemu
+git checkout mc
+
+./configure --enable-mc --target-list=x86_64-softmmu --enable-system --enable-gtk --enable-kvm && make -j 8 && sudo make -j 8 install
+
+
+# Si on a une erreur de type 
+#  migration-checkpoint.c:482:5: error: implicit declaration of function ‘rtnl_tc_get_ops’ [-Werror=implicit-function-declaration]
+#     if (!(ops = rtnl_tc_get_ops(tc))) {
+
+# il faut rajouter la ligne 399 suivante dans migration-checkpoint.c
+#  extern struct rtnl_tc_ops *	rtnl_tc_get_ops(struct rtnl_tc *);
+# par exemple avec la commande
+sed -i "399i extern struct rtnl_tc_ops *	rtnl_tc_get_ops(struct rtnl_tc *);" migration-checkpoint.c
+# puis relancer le make :
+make -j 8 && sudo make -j 8 install

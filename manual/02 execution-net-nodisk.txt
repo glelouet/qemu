@@ -1,0 +1,11 @@
+machine A (sauvegarde)
+
+qemu-system-x86_64 -incoming tcp:0:4444  -m 128 --enable-kvm -usbdevice tablet -cpu kvm64 -smp 4 -monitor stdio -cdrom dsl.iso
+
+machine B (source)
+
+qemu-system-x86_64 -cdrom dsl.iso -m 128 --enable-kvm -usbdevice tablet -cpu kvm64 -smp 4 -monitor stdio
+
+migrate_set_capability mc on
+migrate -d tcp:172.28.128.45:4444
+
