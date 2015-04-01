@@ -1175,7 +1175,6 @@ static MCCopyset *mc_copy_next(MCParams *mc, MCCopyset *copyset)
 
 void mc_process_incoming_checkpoints_if_requested(QEMUFile *f)
 {
-    fprintf(stderr, "starting loading mcs");
     MCParams mc = { .file = f };
     MCSlab *slab;
     int fd = qemu_get_fd(f);
