@@ -396,6 +396,7 @@ out:
     return 0;
 }
 
+extern struct rtnl_tc_ops *rtnl_tc_get_ops(struct rtnl_tc *);
 /*
  * Install a Qdisc plug for micro-checkpointing.
  * If it exists already (say, from a previous dead VM or debugging
@@ -1174,6 +1175,7 @@ static MCCopyset *mc_copy_next(MCParams *mc, MCCopyset *copyset)
 
 void mc_process_incoming_checkpoints_if_requested(QEMUFile *f)
 {
+    fprintf(stderr, "starting loading mcs");
     MCParams mc = { .file = f };
     MCSlab *slab;
     int fd = qemu_get_fd(f);
