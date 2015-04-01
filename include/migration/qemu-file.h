@@ -144,6 +144,39 @@ typedef struct QEMUFileOps {
     QEMURamRemoveFunc *remove;
 } QEMUFileOps;
 
+
+#define IO_BUF_SIZE 32768
+#define MAX_IOV_SIZE MIN(IOV_MAX, 64)
+
+struct QEMUFile {
+    const QEMUFileOps *ops;
+    void *opaque;
+
+    int64_t bytes_xfer;
+    int64_t xfer_limit;
+
+    int64_t pos; /* start of buffer when writing, end of buffer
+                    when reading */
+    int buf_index;
+    int buf_size; /* 0 when writing */
+    uint8_t buf[IO_BUF_SIZE];
+
+    struct iovec iov[MAX_IOV_SIZE];
+    unsigned int iovcnt;
+
+    int last_error;
+};
+
+typedef struct QEMUFileStdio {
+    FILE *stdio_file;
+    QEMUFile *file;
+} QEMUFileStdio;
+
+typedef struct QEMUFileSocket {
+    int fd;
+    QEMUFile *file;
+} QEMUFileSocket;
+
 QEMUFile *qemu_fopen_ops(void *opaque, const QEMUFileOps *ops);
 QEMUFile *qemu_fopen(const char *filename, const char *mode);
 QEMUFile *qemu_fdopen(int fd, const char *mode);
@@ -318,4 +351,8 @@ static inline void qemu_get_sbe64s(QEMUFile *f, int64_t *pv)
 {
     qemu_get_be64s(f, (uint64_t *)pv);
 }
+
+extern int socket_get_fd(void *opaque);
+extern int socket_close(void *opaque);
+
 #endif

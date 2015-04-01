@@ -4,18 +4,16 @@
 #http://wiki.qemu.org/Features/MicroCheckpointing#Usage
 
 #d'abord on crée une VM de sauvegarde. Les paramètrages doivent être les mêmes pour les deux VMs !
-qemu-system-x86_64 -incoming tcp:0:4444  -m 1024 --enable-kvm -usbdevice tablet -cpu host -smp 4 -monitor stdio
-
+qemu-system-x86_64 -incoming tcp:0:4444  -m 128 --enable-kvm -usbdevice tablet -cpu kvm64 -smp 4 -monitor stdio -cdrom dsl.iso
 # on installe une mini vm :
 if [ ! -f dsl.iso ] ; then
  wget ftp://distro.ibiblio.org/pub/linux/distributions/damnsmall/release_candidate/dsl-4.11.rc1.iso
  mv dsl* dsl.iso
 fi
-qemu-system-x86_64 -cdrom dsl.iso -m 1024 --enable-kvm -usbdevice tablet -cpu host -smp 4 -monitor stdio
 
-#une fois la VM crée le shell devient le moniteur
-
-migrate_set_capability mc on
-migrate -d tcp:0:4444
+#on lance la VM source, on active le MC et démarre la migration
+echo "migrate_set_capability mc on
+migrate -d tcp:localhost:4444" \
+| qemu-system-x86_64 -cdrom dsl.iso -m 128 --enable-kvm -usbdevice tablet -cpu kvm64 -smp 4 -monitor stdio
 
 #Et là on ctrl-c dans le shell de cette vm

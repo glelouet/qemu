@@ -802,9 +802,9 @@ static int mc_recv(QEMUFile *f, uint64_t request, uint64_t *action)
 {
     int ret = 0;
     uint64_t got;
-
+    
     got = qemu_get_be64(f);
-
+    
     ret = qemu_file_get_error(f);
     if (ret) {
         fprintf(stderr, "transaction: recv error while expecting %s (%"
@@ -1173,6 +1173,25 @@ static MCCopyset *mc_copy_next(MCParams *mc, MCCopyset *copyset)
     return copyset;
 }
 
+
+
+static int mc_get_buffer_timeout_fail(void *opaque, uint8_t *buf, int64_t pos, int size)
+{
+    QEMUFileSocket *s = opaque;
+    ssize_t len;
+    len = qemu_recv(s->fd, buf, size, 0);
+    if (len == -1) {
+        len = -socket_error();
+    }
+    return len;
+}
+
+static const QEMUFileOps mc_read_notimeout_ops = {
+    .get_buffer = mc_get_buffer_timeout_fail,
+    .get_fd = socket_get_fd,
+    .close = socket_close
+};
+
 void mc_process_incoming_checkpoints_if_requested(QEMUFile *f)
 {
     MCParams mc = { .file = f };
@@ -1202,15 +1221,23 @@ void mc_process_incoming_checkpoints_if_requested(QEMUFile *f)
     }
 
     //qemu_set_block(fd);
-    socket_set_nodelay(fd);
-
+    //socket_set_nodelay(fd);
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 500000;
+    if (setsockopt (fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+                sizeof(timeout)) < 0)
+        printf("error : setsockopt failed\n");
+    
+    f->ops=&mc_read_notimeout_ops;
+    
     while (true) {
         checkpoint_received = false;
         ret = mc_recv(f, MC_TRANSACTION_ANY, &action);
         if (ret < 0) {
             goto rollback;
         }
-
+        
         switch(action) {
         case MC_TRANSACTION_START:
             checkpoint_size = qemu_get_be64(f);
@@ -1379,10 +1406,12 @@ static int mc_get_buffer_internal(void *opaque, uint8_t *buf, int64_t pos,
 static int mc_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
 {
     MCParams *mc = opaque;
-
+    
     return mc_get_buffer_internal(mc, buf, pos, size, &mc->curr_slab,
                                   mc->start_copyset - 1);
 }
+
+
 
 static int mc_load_page(QEMUFile *f, void *opaque, void *host_addr, long size)
 {
