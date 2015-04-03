@@ -20,7 +20,7 @@ static ssize_t socket_writev_buffer(void *opaque, struct iovec *iov, int iovcnt,
     return len;
 }
 
-int socket_get_fd(void *opaque)
+static int socket_get_fd(void *opaque)
 {
     QEMUFileSocket *s = opaque;
 
@@ -50,7 +50,7 @@ static int socket_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
     return len;
 }
 
-int socket_close(void *opaque)
+static int socket_close(void *opaque)
 {
     QEMUFileSocket *s = opaque;
     closesocket(s->fd);

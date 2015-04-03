@@ -352,7 +352,4 @@ static inline void qemu_get_sbe64s(QEMUFile *f, int64_t *pv)
     qemu_get_be64s(f, (uint64_t *)pv);
 }
 
-extern int socket_get_fd(void *opaque);
-extern int socket_close(void *opaque);
-
 #endif

@@ -1186,11 +1186,19 @@ static int mc_get_buffer_timeout_fail(void *opaque, uint8_t *buf, int64_t pos, i
     return len;
 }
 
-static const QEMUFileOps mc_read_notimeout_ops = {
-    .get_buffer = mc_get_buffer_timeout_fail,
-    .get_fd = socket_get_fd,
-    .close = socket_close
-};
+static const QEMUFileOps *cp_ops_getbuffer_timeout(const QEMUFileOps *src){
+    QEMUFileOps *ret = malloc(sizeof(QEMUFileOps));
+    memcpy(ret,src,sizeof(QEMUFileOps));
+    ret->get_buffer = mc_get_buffer_timeout_fail;
+    return ret;
+}
+
+//not used
+//static const QEMUFileOps mc_read_notimeout_ops = {
+//    .get_buffer = mc_get_buffer_timeout_fail,
+//    .get_fd = socket_get_fd,
+//    .close = socket_close
+//};
 
 void mc_process_incoming_checkpoints_if_requested(QEMUFile *f)
 {
@@ -1224,12 +1232,12 @@ void mc_process_incoming_checkpoints_if_requested(QEMUFile *f)
     //socket_set_nodelay(fd);
     struct timeval timeout;
     timeout.tv_sec = 0;
-    timeout.tv_usec = 500000;
+    timeout.tv_usec = 200000;
     if (setsockopt (fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
                 sizeof(timeout)) < 0)
         printf("error : setsockopt failed\n");
     
-    f->ops=&mc_read_notimeout_ops;
+    f->ops=cp_ops_getbuffer_timeout(f->ops);
     
     while (true) {
         checkpoint_received = false;
