@@ -1,0 +1,188 @@
+index aae617e..77f3585 100755
+--- a/configure
++++ b/configure
+@@ -249,6 +249,7 @@ kvm="no"
+rdma=""
+gprof="no"
+debug_tcg="no"
++mc=""
+debug="no"
+strip_opt="yes"
+tcg_interpreter="no"
+@@ -318,6 +319,7 @@ glusterfs_zerofill="no"
+virtio_blk_data_plane=""
+gtk=""
+gtkabi="2.0"
++vte=""
+tpm="no"
+libssh2=""
+vhdx=""
+@@ -1063,12 +1065,20 @@ for opt do
+;;
+--with-gtkabi=*) gtkabi="$optarg"
+;;
++  --disable-vte) vte="no"
++  ;;
++  --enable-vte) vte="yes"
++  ;;
+--enable-tpm) tpm="yes"
+;;
+--disable-libssh2) libssh2="no"
+;;
+--enable-libssh2) libssh2="yes"
+;;
++  --disable-mc) mc="no"
++  ;;
++  --enable-mc) mc="yes"
++  ;;
+--enable-vhdx) vhdx="yes"
+;;
+--disable-vhdx) vhdx="no"
+@@ -1263,6 +1273,8 @@ Advanced options (experts only):
+--enable-kvm             enable KVM acceleration support
+--disable-rdma           disable RDMA-based migration support
+--enable-rdma            enable RDMA-based migration support
++  --disable-mc             disable Micro-Checkpointing support
++  --enable-mc              enable Micro-Checkpointing support
+--enable-tcg-interpreter enable TCG with bytecode interpreter (TCI)
+--enable-system          enable all system emulation targets
+--disable-system         disable all system emulation targets
+@@ -1946,30 +1958,41 @@ if test "$gtk" != "no"; then
+gtkpackage="gtk+-$gtkabi"
+if test "$gtkabi" = "3.0" ; then
+gtkversion="3.0.0"
+-      vtepackage="vte-2.90"
+-      vteversion="0.32.0"
+else
+gtkversion="2.18.0"
+-      vtepackage="vte"
+-      vteversion="0.24.0"
+fi
+-    if ! $pkg_config --exists "$gtkpackage >= $gtkversion"; then
+-        if test "$gtk" = "yes" ; then
++    if $pkg_config --exists "$gtkpackage >= $gtkversion"; then
++        gtk_cflags=`$pkg_config --cflags $gtkpackage`
++        gtk_libs=`$pkg_config --libs $gtkpackage`
++        libs_softmmu="$gtk_libs $libs_softmmu"
++        gtk="yes"
++    elif test "$gtk" = "yes"; then
+feature_not_found "gtk" "Install gtk2 or gtk3 (requires --with-gtkabi=3.0 option to configure) devel"
+-        fi
++    else
+gtk="no"
+-    elif ! $pkg_config --exists "$vtepackage >= $vteversion"; then
+-        if test "$gtk" = "yes" ; then
+-            error_exit "libvte not found (required for gtk support)"
+fi
+-        gtk="no"
++fi
++
++##########################################
++# VTE probe
++
++if test "$vte" != "no"; then
++    if test "$gtkabi" = "3.0"; then
++      vtepackage="vte-2.90"
++      vteversion="0.32.0"
+else
+-	gtk_cflags=`$pkg_config --cflags $gtkpackage`
+-	gtk_libs=`$pkg_config --libs $gtkpackage`
++      vtepackage="vte"
++      vteversion="0.24.0"
++    fi
++    if $pkg_config --exists "$vtepackage >= $vteversion"; then
+vte_cflags=`$pkg_config --cflags $vtepackage`
+vte_libs=`$pkg_config --libs $vtepackage`
+-	libs_softmmu="$gtk_libs $vte_libs $libs_softmmu"
+-	gtk="yes"
++        libs_softmmu="$vte_libs $libs_softmmu"
++        vte="yes"
++    elif test "$vte" = "yes"; then
++        feature_not_found "vte" "Install libvte or libvte-2.90 (requires --with-gtkabi=3.0 option to configure) devel"
++    else
++        vte="no"
+fi
+fi
+
+@@ -2090,6 +2113,35 @@ EOF
+fi
+fi
+
++##################################################
++# Micro-Checkpointing requires netlink (libnl3)
++if test "$mc" != "no" ; then
++  cat > $TMPC <<EOF
++#include <libnl3/netlink/route/qdisc/plug.h>
++#include <libnl3/netlink/route/class.h>
++#include <libnl3/netlink/cli/utils.h>
++#include <libnl3/netlink/cli/tc.h>
++#include <libnl3/netlink/cli/qdisc.h>
++#include <libnl3/netlink/cli/link.h>
++int main(void) { return 0; }
++EOF
++  mc_libs="-lnl-3 -lnl-cli-3 -lnl-route-3"
++  mc_cflags="-I/usr/include/libnl3"
++  if compile_prog "$mc_cflags" "$mc_libs" ; then
++    mc="yes"
++    libs_softmmu="$libs_softmmu $mc_libs"
++    QEMU_CFLAGS="$QEMU_CFLAGS $mc_cflags"
++  else
++    if test "$mc" = "yes" ; then
++        error_exit +            " NetLink v3 libs/headers not present." +            " Please install the libnl3-*-dev(el) packages from your distro."
++    fi
++    mc="no"
++  fi
++fi
++
++
+##########################################
+# VNC TLS/WS detection
+if test "$vnc" = "yes" -a ( "$vnc_tls" != "no" -o "$vnc_ws" != "no" ) ; then
+@@ -4053,6 +4105,7 @@ fi
+echo "pixman            $pixman"
+echo "SDL support       $sdl"
+echo "GTK support       $gtk"
++echo "VTE support       $vte"
+echo "curses support    $curses"
+echo "curl support      $curl"
+echo "mingw32 support   $mingw32"
+@@ -4088,6 +4141,7 @@ echo "KVM support       $kvm"
+echo "RDMA support      $rdma"
+echo "TCG interpreter   $tcg_interpreter"
+echo "fdt support       $fdt"
++echo "Micro checkpointing $mc"
+echo "preadv support    $preadv"
+echo "fdatasync         $fdatasync"
+echo "madvise           $madvise"
+@@ -4381,6 +4435,9 @@ echo "GLIB_CFLAGS=$glib_cflags" >> $config_host_mak
+if test "$gtk" = "yes" ; then
+echo "CONFIG_GTK=y" >> $config_host_mak
+echo "GTK_CFLAGS=$gtk_cflags" >> $config_host_mak
++fi
++if test "$vte" = "yes" ; then
++  echo "CONFIG_VTE=y" >> $config_host_mak
+echo "VTE_CFLAGS=$vte_cflags" >> $config_host_mak
+fi
+if test "$xen" = "yes" ; then
+@@ -4628,6 +4685,10 @@ if test "$rdma" = "yes" ; then
+echo "CONFIG_RDMA=y" >> $config_host_mak
+fi
+
++if test "$mc" = "yes" ; then
++  echo "CONFIG_MC=y" >> $config_host_mak
++fi
++
+if test "$tcg_interpreter" = "yes"; then
+QEMU_INCLUDES="-I$(SRC_PATH)/tcg/tci $QEMU_INCLUDES"
+elif test "$ARCH" = "sparc64" ; then
+@@ -5073,6 +5134,10 @@ echo "QEMU_CFLAGS+=$cflags" >> $config_target_mak
+
+done # for target in $targets
+
++if test "$mc" = "yes" ; then
++echo "CONFIG_MC=y" >> $config_host_mak
++fi
++
+if [ "$pixman" = "internal" ]; then
+echo "config-host.h: subdir-pixman" >> $config_host_mak
+fi
