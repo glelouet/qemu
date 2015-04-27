@@ -33,6 +33,7 @@
 #define QEMU_VM_SECTION_END          0x03
 #define QEMU_VM_SECTION_FULL         0x04
 #define QEMU_VM_SUBSECTION           0x05
+#define QEMU_VM_VMDESCRIPTION        0x06
 
 struct MigrationParams {
     bool blk;
@@ -67,6 +68,7 @@ struct MigrationState
     int64_t xbzrle_cache_size;
     int64_t setup_time;
     int64_t checkpoints;
+    int64_t dirty_sync_count;
 };
 
 void process_incoming_migration(QEMUFile *f);
@@ -74,10 +76,6 @@ void process_incoming_migration(QEMUFile *f);
 void qemu_start_incoming_migration(const char *uri, Error **errp);
 
 uint64_t migrate_max_downtime(void);
-
-void do_info_migrate_print(Monitor *mon, const QObject *data);
-
-void do_info_migrate(Monitor *mon, QObject **ret_data);
 
 void exec_start_incoming_migration(const char *host_port, Error **errp);
 
@@ -121,8 +119,6 @@ void free_xbzrle_decoded_buf(void);
 
 void acct_update_position(QEMUFile *f, size_t size, bool zero);
 
-extern SaveVMHandlers savevm_ram_handlers;
-
 uint64_t dup_mig_bytes_transferred(void);
 uint64_t dup_mig_pages_transferred(void);
 uint64_t skipped_mig_bytes_transferred(void);
@@ -135,23 +131,27 @@ uint64_t xbzrle_mig_bytes_transferred(void);
 uint64_t xbzrle_mig_pages_transferred(void);
 uint64_t xbzrle_mig_pages_overflow(void);
 uint64_t xbzrle_mig_pages_cache_miss(void);
-void acct_clear(void);
-
-void migrate_set_state(MigrationState *s, int old_state, int new_state);
-
-enum {
-    MIG_STATE_ERROR = -1,
-    MIG_STATE_NONE,
-    MIG_STATE_SETUP,
-    MIG_STATE_CANCELLED,
-    MIG_STATE_CANCELLING,
-    MIG_STATE_ACTIVE,
-    MIG_STATE_CHECKPOINTING,
-    MIG_STATE_COMPLETED,
-};
-
-void mc_init_checkpointer(MigrationState *s);
-void mc_process_incoming_checkpoints_if_requested(QEMUFile *f);
+//<<<<<<< HEAD
+//void acct_clear(void);
+//
+//void migrate_set_state(MigrationState *s, int old_state, int new_state);
+//
+//enum {
+//    MIG_STATE_ERROR = -1,
+//    MIG_STATE_NONE,
+//    MIG_STATE_SETUP,
+//    MIG_STATE_CANCELLED,
+//    MIG_STATE_CANCELLING,
+//    MIG_STATE_ACTIVE,
+//    MIG_STATE_CHECKPOINTING,
+//    MIG_STATE_COMPLETED,
+//};
+//
+//void mc_init_checkpointer(MigrationState *s);
+//void mc_process_incoming_checkpoints_if_requested(QEMUFile *f);
+//=======
+double xbzrle_mig_cache_miss_rate(void);
+//>>>>>>> ce7574dde22fba932dac4632b978aa471db76478
 
 void ram_handle_compressed(void *host, uint8_t ch, uint64_t size);
 
@@ -169,7 +169,6 @@ void migrate_add_blocker(Error *reason);
  */
 void migrate_del_blocker(Error *reason);
 
-bool migrate_rdma_pin_all(void);
 bool migrate_zero_blocks(void);
 
 bool migrate_auto_converge(void);
@@ -207,12 +206,11 @@ void ram_control_remove(QEMUFile *f, ram_addr_t block_offset);
 #define RAM_COPY_CONTROL_NOT_SUPP -5000
 #define RAM_COPY_CONTROL_DELAYED  -6000
 
-#define RDMA_CONTROL_VERSION_CURRENT 1
-
-int ram_control_save_page(QEMUFile *f, ram_addr_t block_offset,
-                             uint8_t *host_addr,
-                             ram_addr_t offset, long size,
-                             int *bytes_sent);
+//<<<<<<< HEAD
+//#define RDMA_CONTROL_VERSION_CURRENT 1
+size_t ram_control_save_page(QEMUFile *f, ram_addr_t block_offset,
+                             ram_addr_t offset, size_t size,
+                             uint64_t *bytes_sent);
 
 int ram_control_load_page(QEMUFile *f,
                              void *host_addr,
