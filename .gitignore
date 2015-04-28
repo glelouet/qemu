@@ -26,6 +26,7 @@
 /libdis*
 /libuser
 /linux-headers/asm
+/nbproject
 /qga/qapi-generated
 /qapi-generated
 /qapi-types.[ch]
