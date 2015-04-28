@@ -332,7 +332,7 @@ EQMP
 
     {
         .name       = "send-key",
-        .args_type  = "keys:O,hold-time:i?",
+        .args_type  = "keys:q,hold-time:i?",
         .mhandler.cmd_new = qmp_marshal_input_send_key,
     },
 
@@ -808,8 +808,7 @@ EQMP
         .args_type  = "protocol:s,hostname:s,port:i?,tls-port:i?,cert-subject:s?",
         .params     = "protocol hostname port tls-port cert-subject",
         .help       = "send migration info to spice/vnc client",
-        .mhandler.cmd_async = client_migrate_info,
-        .flags      = MONITOR_CMD_ASYNC,
+        .mhandler.cmd_new = client_migrate_info,
     },
 
 SQMP
@@ -3311,7 +3310,7 @@ EQMP
 
     {
         .name       = "migrate-set-capabilities",
-        .args_type  = "capabilities:O",
+        .args_type  = "capabilities:q",
         .params     = "capability:s,state:b",
 	.mhandler.cmd_new = qmp_marshal_input_migrate_set_capabilities,
     },
