@@ -161,25 +161,6 @@ typedef struct QEMUFileOps {
 #define IO_BUF_SIZE 32768
 #define MAX_IOV_SIZE MIN(IOV_MAX, 64)
 
-struct QEMUFile {
-    const QEMUFileOps *ops;
-    void *opaque;
-
-    int64_t bytes_xfer;
-    int64_t xfer_limit;
-
-    int64_t pos; /* start of buffer when writing, end of buffer
-                    when reading */
-    int buf_index;
-    int buf_size; /* 0 when writing */
-    uint8_t buf[IO_BUF_SIZE];
-
-    struct iovec iov[MAX_IOV_SIZE];
-    unsigned int iovcnt;
-
-    int last_error;
-};
-
 typedef struct QEMUFileStdio {
     FILE *stdio_file;
     QEMUFile *file;

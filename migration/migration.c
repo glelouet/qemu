@@ -26,21 +26,6 @@
 #include "qmp-commands.h"
 #include "trace.h"
 
-//<<<<<<< HEAD:migration.c
-//#define DEBUG_MIGRATION
-
-#ifdef DEBUG_MIGRATION
-#define DPRINTF(fmt, ...) \
-    do { printf("migration: " fmt, ## __VA_ARGS__); } while (0)
-#else
-#define DPRINTF(fmt, ...) \
-    do { } while (0)
-#endif
-
-//=======
-//>>>>>>> ce7574dde22fba932dac4632b978aa471db76478:migration/migration.c
-#define MAX_THROTTLE  (32 << 20)      /* Migration speed throttling */
-
 /* Amount of time to allocate to each "chunk" of bandwidth-throttled
  * data. */
 #define BUFFER_DELAY     100
@@ -274,9 +259,9 @@ MigrationInfo *qmp_query_migrate(Error **errp)
         info->has_setup_time = true;
         info->setup_time = s->setup_time;
         break;
-    case MIG_STATE_CHECKPOINTING:
+    case MIGRATION_STATUS_CHECKPOINTING:
         info->has_status = true;
-        info->status = g_strdup("checkpointing");
+        info->status = MIGRATION_STATUS_CHECKPOINTING;
         info->has_setup_time = true;
         info->setup_time = s->setup_time;
         info->has_downtime = true;
@@ -330,8 +315,8 @@ void qmp_migrate_set_capabilities(MigrationCapabilityStatusList *params,
 
 bool migration_is_active(MigrationState *s)
 {
-    return (s->state == MIG_STATE_ACTIVE) || s->state == MIG_STATE_SETUP
-            || s->state == MIG_STATE_CHECKPOINTING;
+    return s->state == MIGRATION_STATUS_ACTIVE || s->state ==  MIGRATION_STATUS_SETUP
+            || s->state ==  MIGRATION_STATUS_CHECKPOINTING;
 }
 
 void migrate_set_state(MigrationState *s, int old_state, int new_state)
@@ -427,7 +412,7 @@ bool migration_in_setup(MigrationState *s)
 
 bool migration_is_mc(MigrationState *s)
 {
-    return s->state == MIG_STATE_CHECKPOINTING;
+    return s->state == MIGRATION_STATUS_CHECKPOINTING;
 }
 
 bool migration_has_finished(MigrationState *s)
@@ -712,7 +697,7 @@ static void *migration_thread(void *opaque)
                 if (!qemu_file_get_error(s->file)) {
                     if (!migrate_use_mc()) {
                         migrate_set_state(s,
-                            MIG_STATE_ACTIVE, MIG_STATE_COMPLETED);
+                            MIGRATION_STATUS_ACTIVE, MIGRATION_STATUS_COMPLETED);
                     }
                     break;
                 }
@@ -772,7 +757,7 @@ static void *migration_thread(void *opaque)
         }
     }
 
-    if (migrate_use_mc() && s->state != MIG_STATE_ERROR) {
+    if (migrate_use_mc() && s->state != MIGRATION_STATUS_FAILED) {
         mc_init_checkpointer(s);
     } else {
         qemu_bh_schedule(s->cleanup_bh);

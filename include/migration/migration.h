@@ -30,7 +30,7 @@
 #define QEMU_VM_EOF                  0x00
 #define QEMU_VM_SECTION_START        0x01
 #define QEMU_VM_SECTION_PART         0x02
-#define QEMU_VM_SECTION_END          0x03
+#define QEMU_VM_SECTION_END          0x			03
 #define QEMU_VM_SECTION_FULL         0x04
 #define QEMU_VM_SUBSECTION           0x05
 #define QEMU_VM_VMDESCRIPTION        0x06
@@ -132,23 +132,14 @@ uint64_t xbzrle_mig_pages_transferred(void);
 uint64_t xbzrle_mig_pages_overflow(void);
 uint64_t xbzrle_mig_pages_cache_miss(void);
 //<<<<<<< HEAD
-//void acct_clear(void);
-//
-//void migrate_set_state(MigrationState *s, int old_state, int new_state);
-//
-//enum {
-//    MIG_STATE_ERROR = -1,
-//    MIG_STATE_NONE,
-//    MIG_STATE_SETUP,
-//    MIG_STATE_CANCELLED,
-//    MIG_STATE_CANCELLING,
-//    MIG_STATE_ACTIVE,
-//    MIG_STATE_CHECKPOINTING,
-//    MIG_STATE_COMPLETED,
-//};
-//
-//void mc_init_checkpointer(MigrationState *s);
-//void mc_process_incoming_checkpoints_if_requested(QEMUFile *f);
+void acct_clear(void);
+
+void migrate_set_state(MigrationState *s, int old_state, int new_state);
+
+void mc_init_checkpointer(MigrationState *s);
+void mc_process_incoming_checkpoints_if_requested(QEMUFile *f);
+
+#define MAX_THROTTLE  (32 << 20)
 //=======
 double xbzrle_mig_cache_miss_rate(void);
 //>>>>>>> ce7574dde22fba932dac4632b978aa471db76478
