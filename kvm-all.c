@@ -552,13 +552,13 @@ static int kvm_set_ioeventfd_mmio(int fd, hwaddr addr, uint32_t val,
                                   bool assign, uint32_t size, bool datamatch)
 {
     int ret;
-    struct kvm_ioeventfd iofd;
-
-    iofd.datamatch = datamatch ? adjust_ioeventfd_endianness(val, size) : 0;
-    iofd.addr = addr;
-    iofd.len = size;
-    iofd.flags = 0;
-    iofd.fd = fd;
+    struct kvm_ioeventfd iofd = {
+        .datamatch = datamatch ? adjust_ioeventfd_endianness(val, size) : 0,
+        .addr = addr,
+        .len = size,
+        .flags = 0,
+        .fd = fd,
+    };
 
     if (!kvm_enabled()) {
         return -ENOSYS;
@@ -1141,18 +1141,18 @@ static int kvm_irqchip_get_virq(KVMState *s)
 {
     uint32_t *word = s->used_gsi_bitmap;
     int max_words = ALIGN(s->gsi_count, 32) / 32;
-    int i, bit;
+    int i, zeroes;
     bool retry = true;
 
 again:
     /* Return the lowest unused GSI in the bitmap */
     for (i = 0; i < max_words; i++) {
-        bit = ffs(~word[i]);
-        if (!bit) {
+        zeroes = ctz32(~word[i]);
+        if (zeroes == 32) {
             continue;
         }
 
-        return bit - 1 + i * 32;
+        return zeroes + i * 32;
     }
     if (!s->direct_msi && retry) {
         retry = false;
@@ -1544,8 +1544,17 @@ static int kvm_init(MachineState *ms)
                 strerror(-ret));
 
 #ifdef TARGET_S390X
-        fprintf(stderr, "Please add the 'switch_amode' kernel parameter to "
-                        "your host kernel command line\n");
+        if (ret == -EINVAL) {
+            fprintf(stderr,
+                    "Host kernel setup problem detected. Please verify:\n");
+            fprintf(stderr, "- for kernels supporting the switch_amode or"
+                    " user_mode parameters, whether\n");
+            fprintf(stderr,
+                    "  user space is running in primary address space\n");
+            fprintf(stderr,
+                    "- for kernels supporting the vm.allocate_pgste sysctl, "
+                    "whether it is enabled\n");
+        }
 #endif
         goto err;
     }
